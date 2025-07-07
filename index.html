@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Personal Finance Manager</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <span style="font-size: 2em;">💼</span>
+                <h1>FinanceTracker</h1>
+            </div>
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item active" onclick="showPage('dashboard')">
+                        <span>📊</span> แดชบอร์ด
+                    </li>
+                    <li class="nav-item" onclick="showPage('transactions')">
+                        <span>💸</span> รายการทั้งหมด
+                    </li>
+                    <li class="nav-item" onclick="showPage('budget')">
+                        <span>🎯</span> งบประมาณ
+                    </li>
+                    <li class="nav-item" onclick="showPage('reports')">
+                        <span>📈</span> รายงาน
+                    </li>
+                    <li class="nav-item" onclick="showPage('categories')">
+                        <span>🏷️</span> หมวดหมู่
+                    </li>
+                    <li class="nav-item" onclick="showPage('goals')">
+                        <span>🏆</span> เป้าหมาย
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <header class="header">
+            <div class="search-bar">
+                <input type="text" placeholder="ค้นหารายการ..." id="searchInput">
+            </div>
+            <div class="user-menu">
+                <button class="notification-btn">
+                    <span style="font-size: 1.2em;">🔔</span>
+                    <span class="badge">3</span>
+                </button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span>สวัสดี, ผู้ใช้!</span>
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">U</div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page active">
+                <div class="dashboard-grid">
+                    <div class="card stat-card" style="background: linear-gradient(135deg, #00c851 0%, #77ffb0 100%); color: white;">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-value" id="totalIncome">฿0</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.8);">รายรับทั้งหมด</div>
+                    </div>
+                    <div class="card stat-card" style="background: linear-gradient(135deg, #ff4444 0%, #ff6e6e 100%); color: white;">
+                        <div class="stat-icon">💸</div>
+                        <div class="stat-value" id="totalExpense">฿0</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.8);">รายจ่ายทั้งหมด</div>
+                    </div>
+                    <div class="card stat-card" style="background: linear-gradient(135deg, #33b5e5 0%, #79deff 100%); color: white;">
+                        <div class="stat-icon">🏦</div>
+                        <div class="stat-value" id="balance">฿0</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.8);">ยอดคงเหลือ</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3 style="margin-bottom: 20px;">📊 กราฟรายรับ-รายจ่าย (7 วันล่าสุด)</h3>
+                        <div class="chart-container">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 style="margin-bottom: 20px;">🥧 สัดส่วนการใช้จ่าย</h3>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">📋 รายการล่าสุด</h3>
+                    <div id="recentTransactions" class="transaction-list"></div>
+                </div>
+            </div>
+
+            <!-- Transactions Page -->
+            <div id="transactions" class="page">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2>💸 รายการทั้งหมด</h2>
+                        <button class="btn btn-primary" onclick="showModal('transactionModal')">
+                            ➕ เพิ่มรายการ
+                        </button>
+                    </div>
+                    
+                    <div class="filter-bar">
+                        <div class="filter-group">
+                            <label>ประเภท:</label>
+                            <select id="filterType" onchange="applyFilters()">
+                                <option value="">ทั้งหมด</option>
+                                <option value="income">รายรับ</option>
+                                <option value="expense">รายจ่าย</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>หมวดหมู่:</label>
+                            <select id="filterCategory" onchange="applyFilters()">
+                                <option value="">ทั้งหมด</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>จาก:</label>
+                            <input type="date" id="filterDateFrom" onchange="applyFilters()">
+                        </div>
+                        <div class="filter-group">
+                            <label>ถึง:</label>
+                            <input type="date" id="filterDateTo" onchange="applyFilters()">
+                        </div>
+                    </div>
+                    
+                    <div id="allTransactions" class="transaction-list"></div>
+                </div>
+            </div>
+
+            <!-- Budget Page -->
+            <div id="budget" class="page">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2>🎯 งบประมาณ</h2>
+                        <button class="btn btn-primary" onclick="showModal('budgetModal')">
+                            ➕ ตั้งงบประมาณ
+                        </button>
+                    </div>
+                    
+                    <div id="budgetList"></div>
+                </div>
+            </div>
+
+            <!-- Reports Page -->
+            <div id="reports" class="page">
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <h3>📈 รายงานรายเดือน</h3>
+                        <div class="chart-container">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>📊 เทรนด์การใช้จ่าย</h3>
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Page -->
+            <div id="categories" class="page">
+                <div class="card">
+                    <h2 style="margin-bottom: 25px;">🏷️ จัดการหมวดหมู่</h2>
+                    <div class="category-chips" id="categoryChips"></div>
+                    <button class="btn btn-primary" onclick="showModal('categoryModal')" style="margin-top: 20px;">
+                        ➕ เพิ่มหมวดหมู่
+                    </button>
+                </div>
+            </div>
+
+            <!-- Goals Page -->
+            <div id="goals" class="page">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2>🏆 เป้าหมายการออม</h2>
+                        <button class="btn btn-primary" onclick="showModal('goalModal')">
+                            ➕ ตั้งเป้าหมาย
+                        </button>
+                    </div>
+                    <div id="goalsList"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Quick Add Button -->
+        <div class="quick-add">
+            <button class="fab" onclick="showModal('transactionModal')">+</button>
+        </div>
+    </div>
+
+    <!-- Transaction Modal -->
+    <div id="transactionModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">➕ เพิ่มรายการใหม่</h3>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>รายการ</label>
+                    <input type="text" id="transactionDescription" placeholder="เช่น ค่าอาหาร, เงินเดือน">
+                </div>
+                <div class="form-group">
+                    <label>จำนวนเงิน</label>
+                    <input type="number" id="transactionAmount" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>ประเภท</label>
+                    <select id="transactionType" onchange="updateCategoryOptions()">
+                        <option value="expense">รายจ่าย</option>
+                        <option value="income">รายรับ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>หมวดหมู่</label>
+                    <select id="transactionCategory"></select>
+                </div>
+                <div class="form-group">
+                    <label>วันที่</label>
+                    <input type="date" id="transactionDate">
+                </div>
+                <div class="form-group full-width">
+                    <label>หมายเหตุ</label>
+                    <textarea id="transactionNote" rows="3" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="hideModal('transactionModal')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="saveTransaction()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div id="budgetModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">🎯 ตั้งงบประมาณ</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>หมวดหมู่</label>
+                    <select id="budgetCategory"></select>
+                </div>
+                <div class="form-group">
+                    <label>จำนวนเงิน</label>
+                    <input type="number" id="budgetAmount" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>เดือน</label>
+                    <input type="month" id="budgetMonth">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="hideModal('budgetModal')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="saveBudget()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">🏷️ เพิ่มหมวดหมู่</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>ชื่อหมวดหมู่</label>
+                    <input type="text" id="categoryName" placeholder="เช่น อาหาร, เดินทาง">
+                </div>
+                <div class="form-group">
+                    <label>ไอคอน</label>
+                    <input type="text" id="categoryIcon" placeholder="🍔">
+                </div>
+                <div class="form-group full-width">
+                    <label>ประเภท</label>
+                    <select id="categoryType">
+                        <option value="expense">รายจ่าย</option>
+                        <option value="income">รายรับ</option>
+                    </select>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="hideModal('categoryModal')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="saveCategory()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div id="goalModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">🏆 ตั้งเป้าหมาย</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>เป้าหมาย</label>
+                    <input type="text" id="goalName" placeholder="เช่น ซื้อรถ, เที่ยวต่างประเทศ">
+                </div>
+                <div class="form-group">
+                    <label>จำนวนเป้าหมาย</label>
+                    <input type="number" id="goalAmount" placeholder="0.00" step="0.01">
+                </div>
+                <!-- REMOVED: goalSavedAmount as per your provided HTML -->
+                <div class="form-group">
+                    <label>วันที่เป้าหมาย</label>
+                    <input type="date" id="goalDate">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="hideModal('goalModal')">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="saveGoal()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Alert/Confirm Modal -->
+    <div id="customAlertModal" class="modal">
+        <div class="modal-content">
+            <h3 id="customAlertTitle" style="margin-bottom: 15px; color: var(--primary);"></h3>
+            <p id="customAlertMessage" style="margin-bottom: 25px; color: #333;"></p>
+            <div class="btn-group" id="customAlertBtnGroup">
+                <!-- Buttons will be injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
