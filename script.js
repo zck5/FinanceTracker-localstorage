@@ -1241,3 +1241,187 @@ function renderTrendChart() {
         }
     });
 }
+
+
+function changeChartType(chartName, type) {
+    if (chartName === 'weekly') {
+        if (weeklyChartInstance) {
+            weeklyChartInstance.destroy();
+        }
+
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+        const dailyData = {};
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(sevenDaysAgo);
+            date.setDate(sevenDaysAgo.getDate() + i);
+            const dateString = date.toISOString().split('T')[0];
+            dailyData[dateString] = { income: 0, expense: 0 };
+        }
+
+        transactions.forEach(t => {
+            const date = new Date(t.date);
+            const dateString = t.date;
+            if (date >= sevenDaysAgo && date <= new Date() && dailyData[dateString]) {
+                if (t.type === 'income') dailyData[dateString].income += t.amount;
+                else if (t.type === 'expense') dailyData[dateString].expense += t.amount;
+            }
+        });
+
+        const labels = Object.keys(dailyData).map(dateString => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+        });
+
+        const incomeData = Object.values(dailyData).map(d => d.income);
+        const expenseData = Object.values(dailyData).map(d => d.expense);
+
+        weeklyChartInstance = new Chart(document.getElementById('weeklyChart').getContext('2d'), {
+            type: type === 'area' ? 'line' : type,
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'รายรับ',
+                        data: incomeData,
+                        borderColor: 'rgba(0, 200, 81, 1)',
+                        backgroundColor: 'rgba(0, 200, 81, 0.2)',
+                        fill: type === 'area',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'รายจ่าย',
+                        data: expenseData,
+                        borderColor: 'rgba(255, 68, 68, 1)',
+                        backgroundColor: 'rgba(255, 68, 68, 0.2)',
+                        fill: type === 'area',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+                }
+            }
+        });
+    }
+
+    else if (chartName === 'monthly') {
+        if (monthlyChartInstance) {
+            monthlyChartInstance.destroy();
+        }
+
+        const monthlyIncome = {};
+        const monthlyExpense = {};
+
+        transactions.forEach(t => {
+            const monthYear = t.date.substring(0, 7); // YYYY-MM
+            if (t.type === 'income') {
+                monthlyIncome[monthYear] = (monthlyIncome[monthYear] || 0) + t.amount;
+            } else {
+                monthlyExpense[monthYear] = (monthlyExpense[monthYear] || 0) + t.amount;
+            }
+        });
+
+        const allMonths = Array.from(new Set([...Object.keys(monthlyIncome), ...Object.keys(monthlyExpense)])).sort();
+        const labels = allMonths.map(month => new Date(month + '-01').toLocaleDateString('th-TH', { year: 'numeric', month: 'short' }));
+        const incomeData = allMonths.map(month => monthlyIncome[month] || 0);
+        const expenseData = allMonths.map(month => monthlyExpense[month] || 0);
+
+        monthlyChartInstance = new Chart(document.getElementById('monthlyChart').getContext('2d'), {
+            type: type === 'area' ? 'line' : type,
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'รายรับ',
+                        data: incomeData,
+                        borderColor: 'rgba(0, 200, 81, 1)',
+                        backgroundColor: 'rgba(0, 200, 81, 0.2)',
+                        fill: type === 'area',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'รายจ่าย',
+                        data: expenseData,
+                        borderColor: 'rgba(255, 68, 68, 1)',
+                        backgroundColor: 'rgba(255, 68, 68, 0.2)',
+                        fill: type === 'area',
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+                }
+            }
+        });
+    }
+
+    else if (chartName === 'trend') {
+        if (trendChartInstance) {
+            trendChartInstance.destroy();
+        }
+
+        const monthlyCategorySpending = {};
+        transactions.filter(t => t.type === 'expense').forEach(t => {
+            const monthYear = t.date.substring(0, 7);
+            if (!monthlyCategorySpending[monthYear]) monthlyCategorySpending[monthYear] = {};
+            monthlyCategorySpending[monthYear][t.category] = (monthlyCategorySpending[monthYear][t.category] || 0) + t.amount;
+        });
+
+        const allMonths = Object.keys(monthlyCategorySpending).sort();
+        const allCategories = Array.from(new Set(transactions.filter(t => t.type === 'expense').map(t => t.category)));
+        const colors = generateColors(allCategories.length);
+
+        const datasets = allCategories.map((cat, idx) => ({
+            label: cat,
+            data: allMonths.map(month => monthlyCategorySpending[month]?.[cat] || 0),
+            borderColor: colors[idx],
+            backgroundColor: colors[idx] + (type === 'area' ? '40' : '70'),
+            fill: type === 'area',
+            tension: 0.3
+        }));
+
+        const labels = allMonths.map(month => new Date(month + '-01').toLocaleDateString('th-TH', { year: 'numeric', month: 'short' }));
+
+        trendChartInstance = new Chart(document.getElementById('trendChart').getContext('2d'), {
+            type: type === 'area' ? 'line' : type,
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        beginAtZero: true,
+                        stacked: type === 'area',
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                }
+            }
+        });
+    } 
+    
+} 
+
+
+

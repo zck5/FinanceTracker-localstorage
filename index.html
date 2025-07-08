@@ -78,6 +78,11 @@
                 <div class="dashboard-grid">
                     <div class="card">
                         <h3 style="margin-bottom: 20px;">📊 กราฟรายรับ-รายจ่าย (7 วันล่าสุด)</h3>
+                        <div class="chart-selector">
+                            <button onclick="changeChartType('weekly', 'bar')">📊</button>
+                            <button onclick="changeChartType('weekly', 'radar')">📈</button>
+                            <button onclick="changeChartType('weekly', 'area')">🏔️</button>
+                        </div>
                         <div class="chart-container">
                             <canvas id="weeklyChart"></canvas>
                         </div>
@@ -153,13 +158,23 @@
             <div id="reports" class="page">
                 <div class="dashboard-grid">
                     <div class="card">
-                        <h3>📈 รายงานรายเดือน</h3>
-                        <div class="chart-container">
-                            <canvas id="monthlyChart"></canvas>
-                        </div>
+                    <h3 style="margin-bottom: 20px;">📊 รายงานรายเดือน</h3>
+                    <div class="chart-selector">
+                        <button onclick="changeChartType('monthly', 'bar')">📊</button>
+                        <button onclick="changeChartType('monthly', 'radar')">📈</button>
+                        <button onclick="changeChartType('monthly', 'area')">🏔️</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
                     </div>
                     <div class="card">
-                        <h3>📊 เทรนด์การใช้จ่าย</h3>
+                        <h3 style="margin-bottom: 20px;">📊 เทรนด์การใช้จ่าย</h3>
+                        <div class="chart-selector">
+                            <button onclick="changeChartType('trend', 'bar')">📊</button>
+                            <button onclick="changeChartType('trend', 'radar')">📈</button>
+                            <button onclick="changeChartType('trend', 'area')">🏔️</button>
+                        </div>
                         <div class="chart-container">
                             <canvas id="trendChart"></canvas>
                         </div>
